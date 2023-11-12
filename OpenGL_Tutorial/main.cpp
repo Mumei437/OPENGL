@@ -214,6 +214,8 @@ int main(int argc, char** argv)
 		glfwPollEvents();
 	}
 
+	std::cout << "It's exit." << std::endl;
+
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	exit(EXIT_SUCCESS);
