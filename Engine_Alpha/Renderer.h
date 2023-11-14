@@ -2,6 +2,7 @@
 
 #include"OpenGL.h"
 #include"math.h"
+#include<memory>
 
 //レンダリングのクラス
 class Renderer
@@ -28,7 +29,9 @@ public:
 
 private:
 	//ウィンドウのインスタンス
-	GLFWwindow* mWindow;
+
+	class Window* mWindow;
+
 	//ダブルバッファの入れ替えの間隔時間
 	int mInterVal;
 

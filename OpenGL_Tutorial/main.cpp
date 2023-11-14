@@ -7,6 +7,7 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/type_ptr.hpp>
 #include<glm/gtc/matrix_transform.hpp>
+#include<SOIL2/soil2.h>
 #include"Utils.h"
 
 using namespace std;
@@ -33,6 +34,7 @@ glm::mat4 tMat, rMat;
 void setupVertices(void)
 {
 	//キューブの頂点
+	/*
 	float cubePositions[108] = {
 		-1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f,
 		1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f,
@@ -47,7 +49,7 @@ void setupVertices(void)
 		-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
 		1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f,
 	};
-
+	*/
 	float pyramidPositions[54] = {
 		-1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, // front face
 		1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f, // right face
@@ -57,15 +59,21 @@ void setupVertices(void)
 		1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, // base – right back
 	};
 
+	float pyrTexCoords[36] = {
+		0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, // top and right faces
+		0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, // back and left face
+		0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0, //  base triangles
+	};
+
 	glGenVertexArrays(1, vao);
 	glBindVertexArray(vao[0]);
 	glGenBuffers(numVBOs, vbo);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cubePositions), cubePositions, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidPositions), pyramidPositions, GL_STATIC_DRAW);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(pyrTexCoords), pyrTexCoords, GL_STATIC_DRAW);
 }
 
 void window_reshape_callback(GLFWwindow* window, int w, int h)
@@ -77,6 +85,8 @@ void window_reshape_callback(GLFWwindow* window, int w, int h)
 	aspect = (float)width / (float)height;
 	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
 }
+
+GLuint brickTexture = 0;
 
 void init(GLFWwindow* window) 
 {
@@ -99,6 +109,8 @@ void init(GLFWwindow* window)
 	glfwGetFramebufferSize(window, &width, &height);
 	aspect = (float)width / (float)height;
 	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
+
+	brickTexture = Utils::loadTexture("Textures/itimatsu.png");
 
 	setupVertices();
 
@@ -138,9 +150,16 @@ void display(GLFWwindow* window, double currentTime)
 	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, brickTexture);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -148,6 +167,7 @@ void display(GLFWwindow* window, double currentTime)
 	glDrawArrays(GL_TRIANGLES, 0, 18);//ピラミッドを描画
 	mvStack.pop();//太陽の軸回転をスタックから取り除く
 
+	/*
 	//子オブジェクトの正方形の描画
 	mvStack.push(mvStack.top());
 	mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(sin((float)currentTime)*4.0,0.0f, cos((float)currentTime) * 4.0));
@@ -178,6 +198,13 @@ void display(GLFWwindow* window, double currentTime)
 
 	//すべての要素を取り除く
 	mvStack.pop(); mvStack.pop(); mvStack.pop(); mvStack.pop();
+	*/
+
+	while (mvStack.size() > 0)
+	{
+		mvStack.pop();
+	}
+
 }
 
 

@@ -4,6 +4,7 @@
 #include<stack>
 #include"Shader.h"
 #include"Vertex.h"
+#include"Window.h"
 
 Renderer::Renderer(const int width, const int height, const char* title)
 	:
@@ -27,18 +28,7 @@ Renderer::Renderer(const int width, const int height, const char* title)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
-	mWindow = glfwCreateWindow(width, height, title, NULL, NULL);//ウィンドウの作成
-	if (!mWindow)//もし、ウィンドウの作成に失敗すれば
-	{
-		exit(EXIT_FAILURE);//終了
-	}
-	glfwMakeContextCurrent(mWindow);//作成したウィンドウをOpenGLの処理の対象に指定
-
-	if (glewInit() != GLEW_OK)//GLEWの初期化
-	{
-		exit(EXIT_FAILURE);//失敗したら、強制終了
-	}
-	glfwSwapInterval(mInterVal);//垂直同期のバッファの入れ替えの間隔の指定
+	mWindow = new Window(width, height, title, NULL, NULL);
 
 	SetClearColor(Vec3::Zero);//背景色の設定(最初は真っ黒)
 
@@ -69,6 +59,8 @@ Renderer::Renderer(const int width, const int height, const char* title)
 		1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, // base – right back
 	};
 
+	
+
 
 	CameraPos = Vector3(0.f, 0.f, 10.f);
 	CubePos = Vector3(-2.0f, 0.0f, 0.0f);
@@ -84,17 +76,18 @@ Renderer::Renderer(const int width, const int height, const char* title)
 Renderer::~Renderer()
 {
 
-	glfwDestroyWindow(mWindow);//終了時にウィンドウを破壊する
+	glfwDestroyWindow(mWindow->GetWindow());//終了時にウィンドウを破壊する
 
 	delete mShader;
 	delete cube;
 	delete pyramid;
+	delete mWindow;
 
 }
 
 bool Renderer::IsContinue() const
 {
-	return !glfwWindowShouldClose(mWindow);//ウィンドウが閉じているかどうか判定(閉じていなければ継続)
+	return !glfwWindowShouldClose(mWindow->GetWindow());//ウィンドウが閉じているかどうか判定(閉じていなければ継続)
 }
 
 void Renderer::Run()
@@ -104,7 +97,7 @@ void Renderer::Run()
 
 	draw();//ここに描画方法を書く
 
-	glfwSwapBuffers(mWindow);//ダブバッファの入れ替え
+	glfwSwapBuffers(mWindow->GetWindow());//ダブバッファの入れ替え
 	glfwPollEvents();//イベントの取り出し
 }
 
@@ -113,12 +106,12 @@ void Renderer::draw()
 
 	float currentTime = (float)glfwGetTime();
 
+	glEnable(GL_CULL_FACE);
 	mShader->Use();
 
-	int width = 0, height = 0;
+	int width = Window::GetWidth(), height = Window::GetHeight();
 
 	//視点行列の構築
-	glfwGetFramebufferSize(mWindow, &width, &height);
 	float aspect = (float)width / (float)height;
 	Matrix4 pMat = GetPerspective(1.0472f, aspect, 0.1f, 1000.0f);
 	Matrix4 vMat = glm::translate(Mat4::Identity, CameraPos * -1.f);
@@ -141,6 +134,7 @@ void Renderer::draw()
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
+	glFrontFace(GL_CCW);
 	glDrawArrays(GL_TRIANGLES, 0, pyramid->GetVertexCount());//ピラミッドを描画
 	mvStack.pop();
 
@@ -155,6 +149,7 @@ void Renderer::draw()
 
 	cube->active();
 
+	glFrontFace(GL_CW);
 	glDrawArrays(GL_TRIANGLES, 0, cube->GetVertexCount());
 	mvStack.pop();//惑星の軸回転をスタックから取り除く
 
@@ -166,10 +161,18 @@ void Renderer::draw()
 
 	mShader->setMatrix4("mv_matrix", mvStack.top());
 	cube->active();
+
+	glFrontFace(GL_CW);
 	glDrawArrays(GL_TRIANGLES, 0, cube->GetVertexCount());
 
 	//すべての要素を取り除く
-	mvStack.pop(); mvStack.pop(); mvStack.pop(); mvStack.pop();
+
+	while (mvStack.size() > 0)
+	{
+		mvStack.pop();
+	}
+
+	// mvStack.pop(); mvStack.pop(); mvStack.pop();
 
 
 }
