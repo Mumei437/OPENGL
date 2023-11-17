@@ -38,6 +38,7 @@ private:
 	class Shader* mShader;
 	class Vertex* cube;
 	class Vertex* pyramid;
+	class Texture* mTexture;
 
 	Vector3 CameraPos;
 	Vector3 CubePos;

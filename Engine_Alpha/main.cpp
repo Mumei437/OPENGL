@@ -7,7 +7,7 @@ int main(int argc, char** argv)
 
 	//Vector3 clear_color(1, 1, 0);
 
-	//renderer.SetClearColor(clear_color);
+	renderer.SetClearColor(Vector3(1, 1, 0));
 
 	while(renderer.IsContinue())
 	{

@@ -5,6 +5,8 @@
 #include"Shader.h"
 #include"Vertex.h"
 #include"Window.h"
+#include"Texture.h"
+#include"Transform.h"
 
 Renderer::Renderer(const int width, const int height, const char* title)
 	:
@@ -32,7 +34,7 @@ Renderer::Renderer(const int width, const int height, const char* title)
 
 	SetClearColor(Vec3::Zero);//背景色の設定(最初は真っ黒)
 
-	mShader = new Shader("shaders/Transfer.vert", "shaders/Transfer.frag");
+	mShader = new Shader("shaders/Texture.vert", "shaders/Texture.frag");
 
 	//キューブの頂点
 	float vertexPositions[108] = {
@@ -59,6 +61,12 @@ Renderer::Renderer(const int width, const int height, const char* title)
 		1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, // base – right back
 	};
 
+	float pyramidTexCoords[] = {
+		0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, // top and right faces
+		0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, // back and left face
+		0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0, //  base triangles
+	};
+
 	
 
 
@@ -68,8 +76,8 @@ Renderer::Renderer(const int width, const int height, const char* title)
 
 
 	cube = new Vertex(vertexPositions, sizeof(vertexPositions));
-	pyramid = new Vertex(pyramidPositions, sizeof(pyramidPositions));
-
+	pyramid = new Vertex(pyramidPositions, sizeof(pyramidPositions), pyramidTexCoords, sizeof(pyramidTexCoords));
+	mTexture = new Texture("Textures/itimatsu.png");
 
 }
 
@@ -82,6 +90,7 @@ Renderer::~Renderer()
 	delete cube;
 	delete pyramid;
 	delete mWindow;
+	delete mTexture;
 
 }
 
@@ -106,7 +115,7 @@ void Renderer::draw()
 
 	float currentTime = (float)glfwGetTime();
 
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	mShader->Use();
 
 	int width = Window::GetWidth(), height = Window::GetHeight();
@@ -125,20 +134,30 @@ void Renderer::draw()
 	mvStack.push(mvStack.top());
 	mvStack.top() *= GetTranslate(Mat4::Identity, Pyra_Pos);
 	mvStack.push(mvStack.top());
-	mvStack.top() *= GetRotateMatrix(Mat4::Identity, (float)currentTime, Vec3::Axis_X);
+	mvStack.top() *= GetRotateMatrix(Mat4::Identity, (float)currentTime, Vec3::Axis_Z);
 
-	mShader->setMatrix4("mv_matrix", mvStack.top());
+	Transform trans;
+	trans.SetPosition(Vector3(2, 0, 0));
+	trans.SetScale(Vector3(2));
+	trans.SetRotation(0, currentTime * 70, 0);
+
+	
+	mShader->setMatrix4("view_matrix", vMat);
+	mShader->setMatrix4("model_matrix", trans.GetMatrix());
 	mShader->setMatrix4("proj_matrix", pMat);
 
-	pyramid->active();
+	pyramid->VertexActive();
+	pyramid->TexCoordActive(1);
+
+	mTexture->setActive();
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glFrontFace(GL_CCW);
+	//glFrontFace(GL_CCW);
 	glDrawArrays(GL_TRIANGLES, 0, pyramid->GetVertexCount());//ピラミッドを描画
 	mvStack.pop();
 
-
+	/*
 	//子オブジェクトの正方形(惑星)の描画
 	mvStack.push(mvStack.top());
 	mvStack.top() *= GetTranslate(Mat4::Identity, Vector3(sin((float)currentTime) * 4.0f, 0.0f, cos((float)currentTime) * 4.0f));
@@ -147,7 +166,7 @@ void Renderer::draw()
 
 	mShader->setMatrix4("mv_matrix", mvStack.top());
 
-	cube->active();
+	cube->VertexActive();
 
 	glFrontFace(GL_CW);
 	glDrawArrays(GL_TRIANGLES, 0, cube->GetVertexCount());
@@ -160,11 +179,11 @@ void Renderer::draw()
 	mvStack.top() *= GetScaleMatrix(Mat4::Identity, Vector3(0.25f));
 
 	mShader->setMatrix4("mv_matrix", mvStack.top());
-	cube->active();
+	cube->VertexActive();
 
 	glFrontFace(GL_CW);
 	glDrawArrays(GL_TRIANGLES, 0, cube->GetVertexCount());
-
+	*/
 	//すべての要素を取り除く
 
 	while (mvStack.size() > 0)
