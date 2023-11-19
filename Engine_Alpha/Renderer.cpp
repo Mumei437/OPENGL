@@ -7,6 +7,7 @@
 #include"Window.h"
 #include"Texture.h"
 #include"Transform.h"
+#include"Time.h"
 
 Renderer::Renderer(const int width, const int height, const char* title)
 	:
@@ -74,10 +75,15 @@ Renderer::Renderer(const int width, const int height, const char* title)
 	CubePos = Vector3(-2.0f, 0.0f, 0.0f);
 	Pyra_Pos = Vector3(2.0f, 0.0f, 0.0f);
 
+	mTransform.SetPosition(Vector3(2, 0, 0));
+	mTransform.SetScale(Vector3(1, 1, 1));
+
 
 	cube = new Vertex(vertexPositions, sizeof(vertexPositions));
 	pyramid = new Vertex(pyramidPositions, sizeof(pyramidPositions), pyramidTexCoords, sizeof(pyramidTexCoords));
 	mTexture = new Texture("Textures/itimatsu.png");
+
+	euler = Vec3::Zero;
 
 }
 
@@ -101,6 +107,8 @@ bool Renderer::IsContinue() const
 
 void Renderer::Run()
 {
+	Time::Update();
+
 	glClear(GL_DEPTH_BUFFER_BIT);//深度バッファの初期化
 	glClear(GL_COLOR_BUFFER_BIT);//背景色で初期化
 
@@ -113,7 +121,7 @@ void Renderer::Run()
 void Renderer::draw()
 {
 
-	float currentTime = (float)glfwGetTime();
+	//float currentTime = (float)glfwGetTime();
 
 	//glEnable(GL_CULL_FACE);
 	mShader->Use();
@@ -134,16 +142,19 @@ void Renderer::draw()
 	mvStack.push(mvStack.top());
 	mvStack.top() *= GetTranslate(Mat4::Identity, Pyra_Pos);
 	mvStack.push(mvStack.top());
-	mvStack.top() *= GetRotateMatrix(Mat4::Identity, (float)currentTime, Vec3::Axis_Z);
+	//mvStack.top() *= GetRotateMatrix(Mat4::Identity, (float)currentTime, Vec3::Axis_Z);
+	
+	//mTransform.Rotate(4, 8, 12);
 
-	Transform trans;
-	trans.SetPosition(Vector3(2, 0, 0));
-	trans.SetScale(Vector3(2));
-	trans.SetRotation(0, currentTime * 70, 0);
+	euler.z += 70 * Time::GetDeltaTime();
+	euler.y += 50 * Time::GetDeltaTime();
+
+	mTransform.SetRotation(euler);
+
 
 	
 	mShader->setMatrix4("view_matrix", vMat);
-	mShader->setMatrix4("model_matrix", trans.GetMatrix());
+	mShader->setMatrix4("model_matrix", mTransform.GetMatrix());
 	mShader->setMatrix4("proj_matrix", pMat);
 
 	pyramid->VertexActive();

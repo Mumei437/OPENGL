@@ -51,5 +51,12 @@ namespace Mat4
 
 namespace Quat
 {
-	static const Quaternion Identify(0, 0, 0, 1);
+	static const Quaternion Identity(1, 0, 0, 0);
+
+	Quaternion Euler(const float& x,const float& y,const float& z);
+
+	Quaternion Inverse(Quaternion value);
+	Quaternion Inverse(Vector3 eulers);
+
 }
+

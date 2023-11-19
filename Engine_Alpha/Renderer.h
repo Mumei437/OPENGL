@@ -2,7 +2,7 @@
 
 #include"OpenGL.h"
 #include"math.h"
-#include<memory>
+#include"Transform.h"
 
 //レンダリングのクラス
 class Renderer
@@ -43,6 +43,9 @@ private:
 	Vector3 CameraPos;
 	Vector3 CubePos;
 	Vector3 Pyra_Pos;
+
+	Transform mTransform;
+	Vector3 euler;
 
 	float x;
 	float x_speed;
