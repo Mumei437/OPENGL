@@ -1,38 +1,74 @@
 #include "Vertex.h"
 
-Vertex::Vertex(const float* vert, const int Vertsize)
+Vertex::Vertex(const float* vert, const GLuint Vertsize)
 	:
 	mBufferNum(0)
 {
 
-
-
 	glGenVertexArrays(1, &mVao);
-	glGenBuffers(2, mID);
+	glGenBuffers(3, mBuffers.buffers);
 
-	SetVertex(vert, Vertsize);
+	mVertCount = (Vertsize / sizeof(float)) / mBuffers.buffers_num[VERTEX];
 
-	/*
-	glGenVertexArrays(1, &mVao);
-	glBindVertexArray(mVao);
-	glGenBuffers(1, &mVbo);
-
-
-	glBindBuffer(GL_ARRAY_BUFFER, mVbo);
-	glBufferData(GL_ARRAY_BUFFER, size, vert, GL_STATIC_DRAW);
-	*/
+	if (Vertsize >= 0)
+	{
+		SetVertex(vert, Vertsize);
+	}
+	else
+	{
+		printf("頂点のサイズが負の値で不正の値です。\n");
+		mState = enError;
+	}
 
 }
 
-Vertex::Vertex(const float* vert, const int Vertsize, const float* texc, const int TexSize)
+Vertex::Vertex(const float* vert, const GLuint Vertsize, const float* texc, const GLuint TexSize)
 	:
 	mBufferNum(0)
 {
+
 	glGenVertexArrays(1, &mVao);
-	glGenBuffers(2, mID);
+	glGenBuffers(3, mBuffers.buffers);
+
 	
-	SetTexCoord(texc, TexSize);
-	SetVertex(vert, Vertsize);
+	mVertCount = (Vertsize / sizeof(float)) / mBuffers.buffers_num[VERTEX];
+	mTexCount = (TexSize / sizeof(float)) / mBuffers.buffers_num[TEXCOORDS];
+
+
+	if (mVertCount == mTexCount && Vertsize >= 0 && TexSize >= 0)
+	{
+		SetTexCoord(texc, TexSize);
+		SetVertex(vert, Vertsize);
+	}
+	else
+	{
+		mState = enError;
+	}
+
+
+}
+
+Vertex::Vertex(const float* vert, const GLuint Vertsize, const float* texc, const GLuint TexSize, const float* norm, const GLuint NormSize)
+{
+	glGenVertexArrays(1, &mVao);
+	glGenBuffers(3, mBuffers.buffers);
+
+
+	mVertCount = (Vertsize / sizeof(float)) / mBuffers.buffers_num[VERTEX];
+	mTexCount = (TexSize / sizeof(float)) / mBuffers.buffers_num[TEXCOORDS];
+	mNormCount = (NormSize / sizeof(float)) / mBuffers.buffers_num[NORMALS];
+
+
+	if (mVertCount == mTexCount && mVertCount == mTexCount && Vertsize >= 0 && TexSize >= 0)
+	{
+		SetTexCoord(texc, TexSize);
+		SetVertex(vert, Vertsize);
+		SetNormals(norm, NormSize);
+	}
+	else
+	{
+		mState = enError;
+	}
 }
 
 Vertex::~Vertex()
@@ -41,45 +77,162 @@ Vertex::~Vertex()
 
 void Vertex::VertexActive(const int location)
 {
-	glBindVertexArray(mVao);
-	glBindBuffer(GL_ARRAY_BUFFER, mID[VERTEX]);
-	glVertexAttribPointer(location, mVertNum, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(location);
+	if (mBuffers.isdefine[VERTEX])
+	{
+		glBindVertexArray(mVao);
+		glBindBuffer(GL_ARRAY_BUFFER, mBuffers.buffers[VERTEX]);
+		glVertexAttribPointer(location, mBuffers.buffers_num[VERTEX], GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(location);
+	}
 }
 
 void Vertex::TexCoordActive(const int location)
 {
 
-	glBindVertexArray(mVao);
-	glBindBuffer(GL_ARRAY_BUFFER, mID[TEXCOORDS]);
-	glVertexAttribPointer(location, mTexNum, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(location);
+	if (mBuffers.isdefine[TEXCOORDS])
+	{
+		glBindVertexArray(mVao);
+		glBindBuffer(GL_ARRAY_BUFFER, mBuffers.buffers[TEXCOORDS]);
+		glVertexAttribPointer(location, mBuffers.buffers_num[TEXCOORDS], GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(location);
+	}
 
+}
+
+void Vertex::NormalActive(const int location)
+{
+	if (mBuffers.isdefine[NORMALS])
+	{
+		glBindVertexArray(mVao);
+		glBindBuffer(GL_ARRAY_BUFFER, mBuffers.buffers[NORMALS]);
+		glVertexAttribPointer(location, mBuffers.buffers_num[NORMALS], GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(location);
+	}
+}
+
+void Vertex::Active(const int& vert_location, const int& tex_location, const int& norm_location)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		switch (i)
+		{
+		case VERTEX:
+			VertexActive(vert_location);
+			break;
+		case TEXCOORDS:
+			TexCoordActive(tex_location);
+			break;
+		case NORMALS:
+			NormalActive(norm_location);
+			break;
+		}
+	}
 }
 
 void Vertex::SetVertex(const float* vert, const int size)
 {
+	try
+	{
+		mVertCount = (size / sizeof(float)) / mBuffers.buffers_num[VERTEX];
 
-	mVertCount = (size / sizeof(float)) / mVertNum;
+		if (mBuffers.isdefine[TEXCOORDS])
+		{
+			if (mVertCount != mTexCount)
+			{
+				throw"頂点とテックスコードの数が異なります。";
+			}
+		}
+		if (mBuffers.isdefine[NORMALS])
+		{
+			if (mVertCount != mNormCount)
+			{
+				throw"頂点と法線ベクトルの数が異なります。";
+			}
+		}
 
-	
-	glBindVertexArray(mVao);
+		glBindVertexArray(mVao);
 
+		glBindBuffer(GL_ARRAY_BUFFER, mBuffers.buffers[VERTEX]);
+		glBufferData(GL_ARRAY_BUFFER, size, vert, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ARRAY_BUFFER, mID[VERTEX]);
-	glBufferData(GL_ARRAY_BUFFER, size, vert, GL_STATIC_DRAW);
-
+		mBuffers.isdefine[VERTEX] = true;
+	}
+	catch (const char* errorCode)
+	{
+		mState = enError;
+		printf("エラー：%s\n", errorCode);
+	}
 	
 }
 
 void Vertex::SetTexCoord(const float* texcoord, const int size)
 {
+	try
+	{
+		mTexCount = (size / sizeof(float)) / mBuffers.buffers_num[TEXCOORDS];
 
-	mTexCount = (size / sizeof(float)) / mTexNum;
+		if (mBuffers.isdefine[VERTEX])
+		{
+			if (mVertCount != mTexCount)
+			{
+				throw"頂点とテックスコードの数が異なります。";
+			}
+		}
+		if (mBuffers.isdefine[NORMALS])
+		{
+			if (mTexCount != mNormCount)
+			{
+				throw"テックスコードと法線ベクトルの数が異なります。";
+			}
+		}
 
-	glBindVertexArray(mVao);
+		glBindVertexArray(mVao);
 
-	glBindBuffer(GL_ARRAY_BUFFER, mID[TEXCOORDS]);
-	glBufferData(GL_ARRAY_BUFFER, size, texcoord, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, mBuffers.buffers[TEXCOORDS]);
+		glBufferData(GL_ARRAY_BUFFER, size, texcoord, GL_STATIC_DRAW);
 
+		mBuffers.isdefine[TEXCOORDS] = true;
+	}
+	catch (const char* errorCode)
+	{
+		mState = enError;
+		printf("エラー：%s\n", errorCode);
+	}
+
+}
+
+void Vertex::SetNormals(const float* normals, const int size)
+{
+	try
+	{
+
+		mNormCount = (size / sizeof(float)) / mBuffers.buffers_num[NORMALS];
+
+		if (mBuffers.isdefine[VERTEX])
+		{
+			if (mVertCount != mNormCount)
+			{
+				throw"頂点と法線ベクトルの数が異なります。";
+			}
+		}
+		if (mBuffers.isdefine[TEXCOORDS])
+		{
+			if (mTexCount != mNormCount)
+			{
+				throw"テックスコードと法線ベクトルの数が異なります。";
+			}
+		}
+
+		glBindVertexArray(mVao);
+
+		glBindBuffer(GL_ARRAY_BUFFER, mBuffers.buffers[NORMALS]);
+		glBufferData(GL_ARRAY_BUFFER, size, normals, GL_STATIC_DRAW);
+
+		mBuffers.isdefine[NORMALS] = true;
+	}
+	catch (const char* errorCode)
+	{
+		mState = enError;
+		printf("エラー：%s\n", errorCode);
+	}
 }

@@ -30,7 +30,8 @@ Window::Window(const int width, const int height, const char* title, GLFWmonitor
 
 Window::~Window()
 {
-
+	glfwDestroyWindow(mWindow);
+	mWindow = nullptr;
 }
 
 void Window::SetInterval(unsigned int interval)

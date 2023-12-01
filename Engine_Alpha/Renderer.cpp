@@ -8,6 +8,8 @@
 #include"Texture.h"
 #include"Transform.h"
 #include"Time.h"
+#include"Shape.h"
+#include"Pyramid.h"
 
 Renderer::Renderer(const int width, const int height, const char* title)
 	:
@@ -75,28 +77,58 @@ Renderer::Renderer(const int width, const int height, const char* title)
 	CubePos = Vector3(-2.0f, 0.0f, 0.0f);
 	Pyra_Pos = Vector3(2.0f, 0.0f, 0.0f);
 
-	mTransform.SetPosition(Vector3(2, 0, 0));
-	mTransform.SetScale(Vector3(1, 1, 1));
+	mTransform.SetPosition(Vector3(1, 0, 0));
+	mTransform.SetScale(Vector3(2));
 
 
 	cube = new Vertex(vertexPositions, sizeof(vertexPositions));
 	pyramid = new Vertex(pyramidPositions, sizeof(pyramidPositions), pyramidTexCoords, sizeof(pyramidTexCoords));
+
+	mVertexs.push_back(new Vertex(pyramidPositions, sizeof(pyramidPositions), pyramidTexCoords, sizeof(pyramidTexCoords)));
+
 	mTexture = new Texture("Textures/itimatsu.png");
 
 	euler = Vec3::Zero;
+
+	Load();
+
+}
+
+void Renderer::Load()
+{
+
+	Pyramid* pyramid = new Pyramid();
+	pyramid->Init();
+
+	pyramid->GetTransform()->SetPosition(Vector3(1, 1, 0));
+	pyramid->GetTransform()->SetScale(Vector3(2));
+	pyramid->GetTransform()->SetRotation(0, 20, 0);
+
+	AddShape(pyramid);
 
 }
 
 Renderer::~Renderer()
 {
 
-	glfwDestroyWindow(mWindow->GetWindow());//終了時にウィンドウを破壊する
-
 	delete mShader;
 	delete cube;
 	delete pyramid;
 	delete mWindow;
 	delete mTexture;
+
+
+	while (!mVertexs.empty())
+	{
+		delete mVertexs.back();
+		mVertexs.pop_back();
+	}
+
+	while (!mShapes.empty())
+	{
+		delete mShapes.back();
+		mShapes.pop_back();
+	}
 
 }
 
@@ -143,24 +175,49 @@ void Renderer::draw()
 	mvStack.top() *= GetTranslate(Mat4::Identity, Pyra_Pos);
 	mvStack.push(mvStack.top());
 	//mvStack.top() *= GetRotateMatrix(Mat4::Identity, (float)currentTime, Vec3::Axis_Z);
-	
+
 	//mTransform.Rotate(4, 8, 12);
 
-	euler.z += 70 * Time::GetDeltaTime();
-	euler.y += 50 * Time::GetDeltaTime();
+	euler.z += 70 * Time::GetDeltaTime() * -1.f;
+	//euler.y += 50 * Time::GetDeltaTime();
 
-	mTransform.SetRotation(euler);
+
+	for (auto shape : mShapes)
+	{
+
+		shape->Active(0, 1, 2);
+		mTexture->setActive();
+		mShader->setMatrix4("view_matrix", vMat);
+		mShader->setMatrix4("model_matrix", shape->GetTransform()->GetMatrix());
+		mShader->setMatrix4("proj_matrix", pMat);
+
+	}
+	
+	/*
+	for (auto vertex : mVertexs)
+	{
+		mTransform.SetRotation(euler);
+		vertex->Active(0, 1, 0);
+
+		mTexture->setActive();
+
+		mShader->setMatrix4("view_matrix", vMat);
+		mShader->setMatrix4("model_matrix", mTransform.GetMatrix());
+		mShader->setMatrix4("proj_matrix", pMat);
+
+	}
+	*/
+	
 
 
 	
-	mShader->setMatrix4("view_matrix", vMat);
-	mShader->setMatrix4("model_matrix", mTransform.GetMatrix());
-	mShader->setMatrix4("proj_matrix", pMat);
-
+	
+	/*
 	pyramid->VertexActive();
 	pyramid->TexCoordActive(1);
 
 	mTexture->setActive();
+	*/
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
@@ -204,5 +261,12 @@ void Renderer::draw()
 
 	// mvStack.pop(); mvStack.pop(); mvStack.pop();
 
+
+}
+
+void Renderer::AddShape(Shape* shape)
+{
+
+	mShapes.emplace_back(shape);
 
 }
