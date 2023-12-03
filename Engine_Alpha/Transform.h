@@ -7,6 +7,7 @@ public:
 	~Transform();
 
 	void SetPosition(const Vector3& pos) { mPosition = pos; }
+	void SetPosition(const float x, const float y, const float z) { mPosition = Vector3(x, y, z); }
 	Vector3 GetPosition()const { return mPosition; }
 	void SetScale(const Vector3& scale) { mScale = scale; }
 	Vector3 GetScale()const { return mScale; }

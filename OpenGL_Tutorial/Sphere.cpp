@@ -10,6 +10,8 @@ void Sphere::init(int prec)
 	for (int i = 0; i < numVertices; i++) { normals.push_back(glm::vec3()); }
 	for (int i = 0; i < numInidices; i++) { indices.push_back(0); }
 
+
+
 	//‹…‘Ì‚Ì’¸“_‚Ìî•ñ‚ÌŒvŽZ‚Æì¬
 	for (int i = 0; i <= prec; i++)
 	{

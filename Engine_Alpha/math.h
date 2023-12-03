@@ -9,7 +9,9 @@
 #define GetTranslate glm::translate
 #define GetRotateMatrix glm::rotate
 #define GetScaleMatrix glm::scale
+#define toRadians glm::radians
 #define PI 3.14159265358979
+#define PI_F 3.141592f
 
 typedef glm::vec2 Vector2;
 typedef glm::vec3 Vector3;

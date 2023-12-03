@@ -2,11 +2,15 @@
 
 Vertex::Vertex(const float* vert, const GLuint Vertsize)
 	:
-	mBufferNum(0)
+	mBufferNum(0),
+	mVertCount(0),
+	mTexCount(0),
+	mNormCount(0),
+	mIndexCount(0)
 {
 
 	glGenVertexArrays(1, &mVao);
-	glGenBuffers(3, mBuffers.buffers);
+	glGenBuffers(BUFFER_SIZE, mBuffers.buffers);
 
 	mVertCount = (Vertsize / sizeof(float)) / mBuffers.buffers_num[VERTEX];
 
@@ -22,13 +26,46 @@ Vertex::Vertex(const float* vert, const GLuint Vertsize)
 
 }
 
-Vertex::Vertex(const float* vert, const GLuint Vertsize, const float* texc, const GLuint TexSize)
+Vertex::Vertex(const float* vert, const GLuint Vertsize, const int* index, const GLuint index_size)
 	:
-	mBufferNum(0)
+	mBufferNum(0),
+	mVertCount(0),
+	mTexCount(0),
+	mNormCount(0),
+	mIndexCount(0)
 {
 
 	glGenVertexArrays(1, &mVao);
-	glGenBuffers(3, mBuffers.buffers);
+	glGenBuffers(BUFFER_SIZE, mBuffers.buffers);
+
+	mVertCount = (Vertsize / sizeof(float)) / mBuffers.buffers_num[VERTEX];
+	mIndexCount = (index_size / sizeof(int)) / mBuffers.buffers_num[INDEX];
+
+
+	if (Vertsize >= 0 && index_size >= 0)
+	{
+		SetVertex(vert, Vertsize);
+		SetIndex(index, index_size);
+	}
+	else
+	{
+		printf("頂点のサイズが負の値で不正の値です。\n");
+		mState = enError;
+	}
+
+}
+
+Vertex::Vertex(const float* vert, const GLuint Vertsize, const float* texc, const GLuint TexSize)
+	:
+	mBufferNum(0),
+	mVertCount(0),
+	mTexCount(0),
+	mNormCount(0),
+	mIndexCount(0)
+{
+
+	glGenVertexArrays(1, &mVao);
+	glGenBuffers(BUFFER_SIZE, mBuffers.buffers);
 
 	
 	mVertCount = (Vertsize / sizeof(float)) / mBuffers.buffers_num[VERTEX];
@@ -42,16 +79,49 @@ Vertex::Vertex(const float* vert, const GLuint Vertsize, const float* texc, cons
 	}
 	else
 	{
+		printf("エラー：値が不正です。\n");
 		mState = enError;
 	}
 
 
 }
 
-Vertex::Vertex(const float* vert, const GLuint Vertsize, const float* texc, const GLuint TexSize, const float* norm, const GLuint NormSize)
+Vertex::Vertex(const float* vert, const GLuint Vertsize, const float* texc, const GLuint TexSize, const int* index, const GLuint index_size)
 {
 	glGenVertexArrays(1, &mVao);
-	glGenBuffers(3, mBuffers.buffers);
+	glGenBuffers(BUFFER_SIZE, mBuffers.buffers);
+
+
+	mVertCount = (Vertsize / sizeof(float)) / mBuffers.buffers_num[VERTEX];
+	mTexCount = (TexSize / sizeof(float)) / mBuffers.buffers_num[TEXCOORDS];
+
+	mIndexCount = (index_size / sizeof(int)) / mBuffers.buffers_num[INDEX];
+
+	
+
+	if (mVertCount == mTexCount && Vertsize >= 0 && TexSize >= 0 && index_size >= 0)
+	{
+		SetTexCoord(texc, TexSize);
+		SetVertex(vert, Vertsize);
+		SetIndex(index, index_size);
+	}
+	else
+	{
+		printf("エラー：値が不正です。\n");
+		mState = enError;
+	}
+}
+
+Vertex::Vertex(const float* vert, const GLuint Vertsize, const float* texc, const GLuint TexSize, const float* norm, const GLuint NormSize)
+	:
+	mBufferNum(0),
+	mVertCount(0),
+	mTexCount(0),
+	mNormCount(0),
+	mIndexCount(0)
+{
+	glGenVertexArrays(1, &mVao);
+	glGenBuffers(BUFFER_SIZE, mBuffers.buffers);
 
 
 	mVertCount = (Vertsize / sizeof(float)) / mBuffers.buffers_num[VERTEX];
@@ -67,6 +137,39 @@ Vertex::Vertex(const float* vert, const GLuint Vertsize, const float* texc, cons
 	}
 	else
 	{
+		printf("エラー：値が不正です。\n");
+		mState = enError;
+	}
+}
+
+Vertex::Vertex(const float* vert, const GLuint Vertsize, const float* texc, const GLuint TexSize, const float* norm, const GLuint NormSize, const int* index, const GLuint index_size)
+	:
+	mBufferNum(0),
+	mVertCount(0),
+	mTexCount(0),
+	mNormCount(0),
+	mIndexCount(0)
+{
+	glGenVertexArrays(1, &mVao);
+	glGenBuffers(BUFFER_SIZE, mBuffers.buffers);
+
+
+	mVertCount = (Vertsize / sizeof(float)) / mBuffers.buffers_num[VERTEX];
+	mTexCount = (TexSize / sizeof(float)) / mBuffers.buffers_num[TEXCOORDS];
+	mNormCount = (NormSize / sizeof(float)) / mBuffers.buffers_num[NORMALS];
+	mIndexCount = (index_size / sizeof(int)) / mBuffers.buffers_num[INDEX];
+
+
+	if (mVertCount == mTexCount && mVertCount == mTexCount && Vertsize >= 0 && TexSize >= 0 && index_size >= 0)
+	{
+		SetTexCoord(texc, TexSize);
+		SetVertex(vert, Vertsize);
+		SetNormals(norm, NormSize);
+		SetIndex(index, index_size);
+	}
+	else
+	{
+		printf("エラー：値が不正です。\n");
 		mState = enError;
 	}
 }
@@ -110,9 +213,18 @@ void Vertex::NormalActive(const int location)
 	}
 }
 
+void Vertex::IndexActive(const int location)
+{
+	if (mBuffers.isdefine[INDEX])
+	{
+		glBindVertexArray(mVao);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBuffers.buffers[INDEX]);
+	}
+}
+
 void Vertex::Active(const int& vert_location, const int& tex_location, const int& norm_location)
 {
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		switch (i)
 		{
@@ -124,6 +236,9 @@ void Vertex::Active(const int& vert_location, const int& tex_location, const int
 			break;
 		case NORMALS:
 			NormalActive(norm_location);
+			break;
+		case INDEX:
+			IndexActive();
 			break;
 		}
 	}
@@ -235,4 +350,17 @@ void Vertex::SetNormals(const float* normals, const int size)
 		mState = enError;
 		printf("エラー：%s\n", errorCode);
 	}
+}
+
+void Vertex::SetIndex(const int* indexs, const int size)
+{
+
+	mIndexCount = (size / sizeof(int)) / mBuffers.buffers_num[INDEX];
+
+	glBindVertexArray(mVao);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBuffers.buffers[INDEX]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indexs, GL_STATIC_DRAW);
+
+	mState = enIndex;
 }

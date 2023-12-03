@@ -40,7 +40,10 @@ public:
 	};
 public:
 	Texture(const char* filePath);
+	Texture();
 	~Texture();
+
+	void SetTexture(const char* filePath);
 
 	void setActive(Binding binding = Binding::Texture0);
 

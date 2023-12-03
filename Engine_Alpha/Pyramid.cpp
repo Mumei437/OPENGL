@@ -1,5 +1,17 @@
 ﻿#include "Pyramid.h"
 #include"Vertex.h"
+#include"Transform.h"
+
+Pyramid::Pyramid(Renderer* renderer)
+	:
+	Shape(renderer)
+{
+	rot = Vec3::Zero;
+}
+
+Pyramid::~Pyramid()
+{
+}
 
 void Pyramid::Init()
 {
@@ -19,4 +31,13 @@ void Pyramid::Init()
 	};
 
 	mVertex = new Vertex(pyramidPositions, sizeof(pyramidPositions), pyramidTexCoords, sizeof(pyramidTexCoords));
+}
+
+void Pyramid::Update(const float& deltaTime)
+{
+
+	rot.y += 50 * deltaTime;
+	
+	mTransform->SetRotation(rot);
+
 }

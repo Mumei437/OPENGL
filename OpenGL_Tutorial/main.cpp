@@ -10,11 +10,12 @@
 #include<SOIL2/soil2.h>
 #include"Utils.h"
 #include"Sphere.h"
+#include"Torus.h"
 
 using namespace std;
 
 #define numVAOs 1
-#define numVBOs 3
+#define numVBOs 4
 
 float cameraX, cameraY, cameraZ;
 float cubeLocX, cubeLocY, cubeLocZ;
@@ -34,32 +35,34 @@ glm::mat4 tMat, rMat;
 
 Sphere mySphere(48);
 
+Torus myTorus(0.5f, 0.2f, 48);
+
 void setupVertices(void)
 {
 
-	std::vector<int> ind = mySphere.getIndices();
-	std::vector<glm::vec3> vert = mySphere.getVertices();
-	std::vector<glm::vec2> tex = mySphere.getTexCoords();
-	std::vector<glm::vec3> norm = mySphere.getNormals();
+	std::vector<int> ind = myTorus.getIndices();
+	std::vector<glm::vec3> vert = myTorus.getVertices();
+	std::vector<glm::vec2> tex = myTorus.getTexCoords();
+	std::vector<glm::vec3> norm = myTorus.getNormals();
 
 	std::vector<float> pvalues;//頂点座標
 	std::vector<float> tvalues;//テクスチャ座標
 	std::vector<float> nvalues;//法線ベクトル
 
-	int numindices = mySphere.getNumIndices();
+	int numVertices = myTorus.getNumVertices();
 
-	for (int i = 0; i < numindices; i++)
+	for (int i = 0; i < numVertices; i++)
 	{
-		pvalues.push_back((vert[ind[i]]).x);
-		pvalues.push_back((vert[ind[i]]).y);
-		pvalues.push_back((vert[ind[i]]).z);
-
-		tvalues.push_back((tex[ind[i]]).s);
-		tvalues.push_back((tex[ind[i]]).t);
-
-		nvalues.push_back((norm[ind[i]]).x);
-		nvalues.push_back((norm[ind[i]]).y);
-		nvalues.push_back((norm[ind[i]]).z);
+		pvalues.push_back(vert[i].x);
+		pvalues.push_back(vert[i].y);
+		pvalues.push_back(vert[i].z);
+								
+		tvalues.push_back(tex[i].s);
+		tvalues.push_back(tex[i].t);
+								
+		nvalues.push_back(norm[i].x);
+		nvalues.push_back(norm[i].y);
+		nvalues.push_back(norm[i].z);
 
 	}
 
@@ -91,6 +94,11 @@ void setupVertices(void)
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
 	glBufferData(GL_ARRAY_BUFFER, nvalues.size() * 4, &nvalues[0], GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, ind.size() * 4, &ind[0], GL_STATIC_DRAW);
+
+
 }
 
 void window_reshape_callback(GLFWwindow* window, int w, int h)
@@ -201,41 +209,9 @@ void display(GLFWwindow* window, double currentTime)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glFrontFace(GL_CCW);
-	glDrawArrays(GL_TRIANGLES, 0, mySphere.getNumIndices());//ピラミッドを描画
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]);
+	glDrawElements(GL_TRIANGLES,myTorus.getNumIndices(),GL_UNSIGNED_INT,0);//ピラミッドを描画
 	mvStack.pop();//太陽の軸回転をスタックから取り除く
-
-	/*
-	//子オブジェクトの正方形の描画
-	mvStack.push(mvStack.top());
-	mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(sin((float)currentTime)*4.0,0.0f, cos((float)currentTime) * 4.0));
-	mvStack.push(mvStack.top());
-	mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f));
-	
-	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-	glFrontFace(GL_CW);
-	glDrawArrays(GL_TRIANGLES, 0, 36);//正方形を描画
-	mvStack.pop();//惑星の軸回転をスタックから取り除く
-
-	//子オブジェクトの子オジェクトのキューブの描画
-	mvStack.push(mvStack.top());
-	mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, sin((float)currentTime) * 2.0, cos((float)currentTime) * 2.0));
-	mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0f, 0.0f, 1.0f));
-	mvStack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f));
-
-
-	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
-	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-	glFrontFace(GL_CW);
-	glDrawArrays(GL_TRIANGLES, 0, 36);//正方形を描画
-
-	//すべての要素を取り除く
-	mvStack.pop(); mvStack.pop(); mvStack.pop(); mvStack.pop();
-	*/
 
 	while (mvStack.size() > 0)
 	{

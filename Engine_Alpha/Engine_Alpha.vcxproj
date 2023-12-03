@@ -130,14 +130,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Cube.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="math.cpp" />
     <ClCompile Include="Pyramid.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Shape.cpp" />
+    <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Time.cpp" />
+    <ClCompile Include="Torus.cpp" />
     <ClCompile Include="Transform.cpp" />
     <ClCompile Include="Vertex.cpp" />
     <ClCompile Include="Window.cpp" />
@@ -152,14 +155,17 @@
     <None Include="shaders\Transfer.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Cube.h" />
     <ClInclude Include="math.h" />
     <ClInclude Include="OpenGL.h" />
     <ClInclude Include="Pyramid.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Shape.h" />
+    <ClInclude Include="Sphere.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Time.h" />
+    <ClInclude Include="Torus.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="Window.h" />

@@ -28,8 +28,9 @@ public:
 	void SetClearColor(float r, float g, float b, float a = 1.0) { glClearColor(r, g, b, a); }
 	void SetClearColor(Color color) { SetClearColor(color.r, color.g, color.b, color.a); }
 	void SetClearColor(Vector3 color) { SetClearColor(color.r, color.g, color.b); }
+	
 	void AddShape(class Shape* shape);
-
+	void RemoveShape(const Shape* shape);
 
 private:
 	//ウィンドウのインスタンス

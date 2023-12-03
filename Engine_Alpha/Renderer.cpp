@@ -10,7 +10,9 @@
 #include"Time.h"
 #include"Shape.h"
 #include"Pyramid.h"
-
+#include"Cube.h"
+#include"Sphere.h"
+#include"Torus.h"
 Renderer::Renderer(const int width, const int height, const char* title)
 	:
 	mInterVal(1),//インターバルは1
@@ -97,14 +99,30 @@ Renderer::Renderer(const int width, const int height, const char* title)
 void Renderer::Load()
 {
 
-	Pyramid* pyramid = new Pyramid();
+	Pyramid* pyramid = new Pyramid(this);
 	pyramid->Init();
-
-	pyramid->GetTransform()->SetPosition(Vector3(1, 1, 0));
-	pyramid->GetTransform()->SetScale(Vector3(2));
+	pyramid->GetTransform()->SetPosition(Vector3(2, 0, 0));
+	pyramid->GetTransform()->SetScale(Vector3(1));
 	pyramid->GetTransform()->SetRotation(0, 20, 0);
 
-	AddShape(pyramid);
+	pyramid->GetTexture()->SetTexture("Textures/itimatsu.png");
+	
+	Cube* cube = new Cube(this);
+	cube->Init();
+	cube->GetTransform()->SetPosition(Vector3(-2.5, 0, 0));
+	cube->GetTransform()->SetScale(Vector3(1));
+	cube->GetTransform()->SetRotation(0, 20, 0);
+	cube->GetTexture()->SetTexture("Textures/Mandril.jpg");
+
+	Sphere* sphere = new Sphere(this);
+	sphere->Init();
+	sphere->GetTransform()->SetPosition(0, 0, 0);
+	sphere->GetTexture()->SetTexture("Textures/el_global.png");
+
+	Torus* torus = new Torus(this);
+	torus->Init();
+	torus->GetTransform()->SetPosition(0, -2, 0);
+	torus->GetTexture()->SetTexture("Textures/itimatsu.png");
 
 }
 
@@ -141,6 +159,13 @@ void Renderer::Run()
 {
 	Time::Update();
 
+	const float deltaTime = Time::GetDeltaTime();
+
+	for (auto shape : mShapes)
+	{
+		shape->Update(deltaTime);
+	}
+
 	glClear(GL_DEPTH_BUFFER_BIT);//深度バッファの初期化
 	glClear(GL_COLOR_BUFFER_BIT);//背景色で初期化
 
@@ -155,7 +180,7 @@ void Renderer::draw()
 
 	//float currentTime = (float)glfwGetTime();
 
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 	mShader->Use();
 
 	int width = Window::GetWidth(), height = Window::GetHeight();
@@ -186,73 +211,28 @@ void Renderer::draw()
 	{
 
 		shape->Active(0, 1, 2);
-		mTexture->setActive();
+		//mTexture->setActive();
+		shape->GetTexture()->setActive();
 		mShader->setMatrix4("view_matrix", vMat);
 		mShader->setMatrix4("model_matrix", shape->GetTransform()->GetMatrix());
 		mShader->setMatrix4("proj_matrix", pMat);
 
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+		//glFrontFace(GL_CCW);
+
+		if (shape->GetVertexState() == Vertex::enVertex)
+		{
+			glDrawArrays(GL_TRIANGLES, 0, shape->GetVertCount());//ピラミッドを描画
+		}
+		else if (shape->GetVertexState() == Vertex::enIndex)
+		{
+			glDrawElements(GL_TRIANGLES, shape->GetIndexCount(), GL_UNSIGNED_INT, 0);
+		}
+		
 	}
-	
-	/*
-	for (auto vertex : mVertexs)
-	{
-		mTransform.SetRotation(euler);
-		vertex->Active(0, 1, 0);
-
-		mTexture->setActive();
-
-		mShader->setMatrix4("view_matrix", vMat);
-		mShader->setMatrix4("model_matrix", mTransform.GetMatrix());
-		mShader->setMatrix4("proj_matrix", pMat);
-
-	}
-	*/
-	
-
-
-	
-	
-	/*
-	pyramid->VertexActive();
-	pyramid->TexCoordActive(1);
-
-	mTexture->setActive();
-	*/
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	//glFrontFace(GL_CCW);
-	glDrawArrays(GL_TRIANGLES, 0, pyramid->GetVertexCount());//ピラミッドを描画
 	mvStack.pop();
-
-	/*
-	//子オブジェクトの正方形(惑星)の描画
-	mvStack.push(mvStack.top());
-	mvStack.top() *= GetTranslate(Mat4::Identity, Vector3(sin((float)currentTime) * 4.0f, 0.0f, cos((float)currentTime) * 4.0f));
-	mvStack.push(mvStack.top());
-	mvStack.top() *= GetRotateMatrix(Mat4::Identity, (float)currentTime, Vec3::Axis_Y);
-
-	mShader->setMatrix4("mv_matrix", mvStack.top());
-
-	cube->VertexActive();
-
-	glFrontFace(GL_CW);
-	glDrawArrays(GL_TRIANGLES, 0, cube->GetVertexCount());
-	mvStack.pop();//惑星の軸回転をスタックから取り除く
-
-	//
-	mvStack.push(mvStack.top());
-	mvStack.top() *= GetTranslate(Mat4::Identity, Vector3(0.0f, sin((float)currentTime) * 2.0f, cos((float)currentTime) * 2.0f));
-	mvStack.top() *= GetRotateMatrix(Mat4::Identity, (float)currentTime, Vec3::Axis_Z);
-	mvStack.top() *= GetScaleMatrix(Mat4::Identity, Vector3(0.25f));
-
-	mShader->setMatrix4("mv_matrix", mvStack.top());
-	cube->VertexActive();
-
-	glFrontFace(GL_CW);
-	glDrawArrays(GL_TRIANGLES, 0, cube->GetVertexCount());
-	*/
-	//すべての要素を取り除く
+	
 
 	while (mvStack.size() > 0)
 	{
@@ -266,7 +246,18 @@ void Renderer::draw()
 
 void Renderer::AddShape(Shape* shape)
 {
-
 	mShapes.emplace_back(shape);
+
+}
+
+void Renderer::RemoveShape(const Shape* shape)
+{
+	
+	auto iter = std::find(mShapes.begin(), mShapes.end(), shape);
+
+	if (iter != mShapes.end())
+	{
+		mShapes.erase(iter);
+	}
 
 }
