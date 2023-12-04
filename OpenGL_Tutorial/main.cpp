@@ -11,6 +11,7 @@
 #include"Utils.h"
 #include"Sphere.h"
 #include"Torus.h"
+#include"ImportedModel.h"
 
 using namespace std;
 
@@ -32,27 +33,25 @@ float aspect;
 glm::mat4 pMat, vMat, mMat, mvMat;
 glm::mat4 tMat, rMat;
 
+ImportedModel Akyo("3Dmodel/box.obj");
 
-Sphere mySphere(48);
-
-Torus myTorus(0.5f, 0.2f, 48);
 
 void setupVertices(void)
 {
 
-	std::vector<int> ind = myTorus.getIndices();
-	std::vector<glm::vec3> vert = myTorus.getVertices();
-	std::vector<glm::vec2> tex = myTorus.getTexCoords();
-	std::vector<glm::vec3> norm = myTorus.getNormals();
+	std::vector<glm::vec3> vert = Akyo.getVertices();
+	std::vector<glm::vec2> tex = Akyo.getTextureCoords();
+	std::vector<glm::vec3> norm = Akyo.getNormals();
 
 	std::vector<float> pvalues;//頂点座標
 	std::vector<float> tvalues;//テクスチャ座標
 	std::vector<float> nvalues;//法線ベクトル
 
-	int numVertices = myTorus.getNumVertices();
+	int numObjVertices = Akyo.getNumVertices();
 
-	for (int i = 0; i < numVertices; i++)
+	for (int i = 0; i < numObjVertices; i++)
 	{
+
 		pvalues.push_back(vert[i].x);
 		pvalues.push_back(vert[i].y);
 		pvalues.push_back(vert[i].z);
@@ -65,22 +64,6 @@ void setupVertices(void)
 		nvalues.push_back(norm[i].z);
 
 	}
-
-
-	float pyramidPositions[54] = {
-		-1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, // front face
-		1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f, // right face
-		1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f, // back face
-		-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, // left face
-		-1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, // base – left front
-		1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, // base – right back
-	};
-
-	float pyrTexCoords[36] = {
-		0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, // top and right faces
-		0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f, // back and left face
-		0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0, //  base triangles
-	};
 
 	glGenVertexArrays(1, vao);
 	glBindVertexArray(vao[0]);
@@ -95,8 +78,8 @@ void setupVertices(void)
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
 	glBufferData(GL_ARRAY_BUFFER, nvalues.size() * 4, &nvalues[0], GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, ind.size() * 4, &ind[0], GL_STATIC_DRAW);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, ind.size() * 4, &ind[0], GL_STATIC_DRAW);
 
 
 }
@@ -135,7 +118,7 @@ void init(GLFWwindow* window)
 	aspect = (float)width / (float)height;
 	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
 
-	brickTexture = Utils::loadTexture("Textures/el_global.png");
+	brickTexture = Utils::loadTexture("Textures/itimatsu.png");
 
 	glBindTexture(GL_TEXTURE_2D, brickTexture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -162,11 +145,12 @@ float inc = 0.01f;
 std::stack<glm::mat4> mvStack;
 void display(GLFWwindow* window, double currentTime)
 {
+
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glClearColor(1.0, 1.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 
 	glUseProgram(renderingProgram);//シェーダーの利用を宣言
 
@@ -185,7 +169,7 @@ void display(GLFWwindow* window, double currentTime)
 	mvStack.push(mvStack.top());
 	mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f));
 	mvStack.push(mvStack.top());
-	mvStack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(4.0f));
+	mvStack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
 
 
 	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
@@ -208,9 +192,10 @@ void display(GLFWwindow* window, double currentTime)
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-	glFrontFace(GL_CCW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]);
-	glDrawElements(GL_TRIANGLES,myTorus.getNumIndices(),GL_UNSIGNED_INT,0);//ピラミッドを描画
+	//glFrontFace(GL_CW);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]);
+	//glDrawElements(GL_TRIANGLES,myTorus.getNumIndices(),GL_UNSIGNED_INT,0);//ピラミッドを描画
+	glDrawArrays(GL_TRIANGLES, 0, Akyo.getNumVertices());
 	mvStack.pop();//太陽の軸回転をスタックから取り除く
 
 	while (mvStack.size() > 0)
@@ -218,6 +203,7 @@ void display(GLFWwindow* window, double currentTime)
 		mvStack.pop();
 	}
 
+	glEnableVertexAttribArray(0);
 }
 
 
