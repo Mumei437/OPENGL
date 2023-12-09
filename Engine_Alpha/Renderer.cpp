@@ -185,6 +185,25 @@ void Renderer::draw()
 
 	int width = Window::GetWidth(), height = Window::GetHeight();
 
+	GLFWwindow* window = mWindow->GetWindow();
+
+	if (glfwGetKey(window, GLFW_KEY_W))
+	{
+		CameraPos.z -= 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S))
+	{
+		CameraPos.z += 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A))
+	{
+		CameraPos.x -= 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_D))
+	{
+		CameraPos.x += 0.1f;
+	}
+
 	//視点行列の構築
 	float aspect = (float)width / (float)height;
 	Matrix4 pMat = GetPerspective(1.0472f, aspect, 0.1f, 1000.0f);

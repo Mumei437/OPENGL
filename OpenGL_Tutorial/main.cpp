@@ -12,6 +12,7 @@
 #include"Sphere.h"
 #include"Torus.h"
 #include"ImportedModel.h"
+#include<glm/gtx/quaternion.hpp>
 
 using namespace std;
 
@@ -27,16 +28,36 @@ GLuint vao[numVAOs];
 GLuint vbo[numVBOs];
 
 // display()関数で使用される変数を確保し、レンダリング中に確保する必要がないようにする。
-GLuint mvLoc, projLoc;
+GLuint mvLoc, projLoc, nLoc;
+GLuint globalAmbLoc, ambLoc, diffLoc, specLoc, posLoc, mAmbLoc, mDiffLoc, mSpecLoc, mShiLoc;
+
 int width, height;
 float aspect;
-glm::mat4 pMat, vMat, mMat, mvMat;
+glm::mat4 pMat, vMat, mMat, mvMat, invTrMat;
+glm::vec3 currentLightPos, lightPosV; //
+float lightPos[3];//照明の座標
+
 glm::mat4 tMat, rMat;
 
-ImportedModel Akyo("3Dmodel/box.obj");
+ImportedModel Akyo("3Dmodel/teapot.obj");
 
+//Torus torus;
 
-void setupVertices(void)
+glm::vec3 initialLightLoc = glm::vec3(0.0f, 5.0f, 10.0f);
+
+//白い照明
+float globalAmbient[4] = { 0.7f, 0.7f, 0.7f, 1.0f };
+float lightAmbient[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+float lightDiffuse[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+float lightSpecular[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+//マテリアルプロパティ
+float* matAmb = Utils::goldAmbient();
+float* matDif = Utils::goldDiffuse();
+float* matSpe = Utils::goldSpecular();
+float matShi = Utils::goldShininess();
+
+void setupVertices()
 {
 
 	std::vector<glm::vec3> vert = Akyo.getVertices();
@@ -48,6 +69,8 @@ void setupVertices(void)
 	std::vector<float> nvalues;//法線ベクトル
 
 	int numObjVertices = Akyo.getNumVertices();
+
+	//std::vector<int> indicies = Akyo.getIndices();
 
 	for (int i = 0; i < numObjVertices; i++)
 	{
@@ -70,8 +93,8 @@ void setupVertices(void)
 	glGenBuffers(numVBOs, vbo);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, pvalues.size()*4, &pvalues[0], GL_STATIC_DRAW);
-	
+	glBufferData(GL_ARRAY_BUFFER, pvalues.size() * 4, &pvalues[0], GL_STATIC_DRAW);
+
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glBufferData(GL_ARRAY_BUFFER, tvalues.size() * 4, &tvalues[0], GL_STATIC_DRAW);
 
@@ -90,8 +113,6 @@ void window_reshape_callback(GLFWwindow* window, int w, int h)
 	// フレームバッファ全体をビューポートに設定する
 	glViewport(0, 0, width, height);
 
-	aspect = (float)width / (float)height;
-	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
 }
 
 GLuint brickTexture = 0;
@@ -104,7 +125,7 @@ void init(GLFWwindow* window)
 	cameraY = 0.0f;
 	cameraZ = 12.0f;
 
-	cubeLocX = -1.0f;
+	cubeLocX = 0.0f;
 	cubeLocY = -2.0f;
 	cubeLocZ = 0.0f;
 
@@ -118,13 +139,14 @@ void init(GLFWwindow* window)
 	aspect = (float)width / (float)height;
 	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
 
-	brickTexture = Utils::loadTexture("Textures/itimatsu.png");
+	//brickTexture = Utils::loadTexture("Textures/tex_akyo.png");
 
-	glBindTexture(GL_TEXTURE_2D, brickTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glGenerateMipmap(GL_TEXTURE_2D);
+	//glBindTexture(GL_TEXTURE_2D, brickTexture);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	//glGenerateMipmap(GL_TEXTURE_2D);
 
 	//異方性フィルタリングの追加(グラボが対応している場合)
+	/*
 	if (glewIsSupported("GL_EXT_texture_filter_anisotropic"))
 	{
 		printf("異方性フィルタリングの有効化\n");
@@ -132,6 +154,7 @@ void init(GLFWwindow* window)
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,&anisoSetting);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisoSetting);
 	}
+	*/
 
 
 	setupVertices();
@@ -141,39 +164,146 @@ void init(GLFWwindow* window)
 float x = 0.0f;
 float inc = 0.01f;
 
+void installLights(glm::mat4 vMatrix)
+{
+	// convert light’s position to view space, and save it in a float array
+	lightPosV = glm::vec3(vMatrix * glm::vec4(currentLightPos, 1.0));
+	lightPos[0] = lightPosV.x;
+	lightPos[1] = lightPosV.y;
+	lightPos[2] = lightPosV.z;
+
+	// get the locations of the light and material fields in the shader
+	globalAmbLoc = glGetUniformLocation(renderingProgram, "globalAmbient");
+	ambLoc = glGetUniformLocation(renderingProgram, "light.ambient");
+	diffLoc = glGetUniformLocation(renderingProgram, "light.diffuse");
+	specLoc = glGetUniformLocation(renderingProgram, "light.specular");
+	posLoc = glGetUniformLocation(renderingProgram, "light.position");
+	mAmbLoc = glGetUniformLocation(renderingProgram, "material.ambient");
+	mDiffLoc = glGetUniformLocation(renderingProgram, "material.diffuse");
+	mSpecLoc = glGetUniformLocation(renderingProgram, "material.specular");
+	mShiLoc = glGetUniformLocation(renderingProgram, "material.shininess");
+
+	// set the uniform light and material values in the shader
+	glProgramUniform4fv(renderingProgram, globalAmbLoc, 1, globalAmbient);
+	glProgramUniform4fv(renderingProgram, ambLoc, 1, lightAmbient);
+	glProgramUniform4fv(renderingProgram, diffLoc, 1, lightDiffuse);
+	glProgramUniform4fv(renderingProgram, specLoc, 1, lightSpecular);
+	glProgramUniform3fv(renderingProgram, posLoc, 1, lightPos);
+	glProgramUniform4fv(renderingProgram, mAmbLoc, 1, matAmb);
+	glProgramUniform4fv(renderingProgram, mDiffLoc, 1, matDif);
+	glProgramUniform4fv(renderingProgram, mSpecLoc, 1, matSpe);
+	glProgramUniform1f(renderingProgram, mShiLoc, matShi);
+
+}
+
+glm::quat Euler(const float& x, const float& y, const float& z)
+{
+	//x
+	float yaw = glm::radians(x);// x* (PI / 180.0f);
+	//y
+	float pitch = glm::radians(y); //y * (PI / 180.0f);
+	//z
+	float roll = glm::radians(z); //z * (PI / 180.0f);
+
+
+	glm::quat eulerRot;
+
+	eulerRot.x = sin(roll / 2) * cos(pitch / 2) * cos(yaw / 2) - cos(roll / 2) * sin(pitch / 2) * sin(yaw / 2);
+	eulerRot.y = cos(roll / 2) * sin(pitch / 2) * cos(yaw / 2) + sin(roll / 2) * cos(pitch / 2) * sin(yaw / 2);
+	eulerRot.z = cos(roll / 2) * cos(pitch / 2) * sin(yaw / 2) - sin(roll / 2) * sin(pitch / 2) * cos(yaw / 2);
+	eulerRot.w = cos(roll / 2) * cos(pitch / 2) * cos(yaw / 2) + sin(roll / 2) * sin(pitch / 2) * sin(yaw / 2);
+
+	return eulerRot;
+}
+
+glm::vec3 CameraRot = glm::vec3(0.0f);
 
 std::stack<glm::mat4> mvStack;
 void display(GLFWwindow* window, double currentTime)
 {
 
+	if (glfwGetKey(window, GLFW_KEY_W))
+	{
+		cameraZ -= 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S))
+	{
+		cameraZ += 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A))
+	{
+		cameraX -= 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_D))
+	{
+		cameraX += 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_SPACE))
+	{
+		cameraY += 0.1f;
+	}
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT))
+	{
+		cameraY -= 0.1f;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_P))
+	{
+		CameraRot.y += 0.1f;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_O))
+	{
+		CameraRot.y -= 0.1f;
+	}
+
 	glClear(GL_DEPTH_BUFFER_BIT);
-	glClearColor(1.0, 1.0, 0.0, 1.0);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	//glEnable(GL_CULL_FACE);
 
 	glUseProgram(renderingProgram);//シェーダーの利用を宣言
 
+	glEnable(GL_CULL_FACE);
+	//glFrontFace(GL_CW);
+
+	aspect = (float)width / (float)height;
+	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
+
 	mvLoc = glGetUniformLocation(renderingProgram, "mv_matrix");
 	projLoc = glGetUniformLocation(renderingProgram, "proj_matrix");
+	nLoc = glGetUniformLocation(renderingProgram, "norm_matrix");
 
 	//ビュー行列、モデル行列の構築、そしてその連結(MV行列の作成)
 	vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
+	//vMat *= glm::toMat4(Euler(CameraRot.x, CameraRot.y, CameraRot.z));
 	mvStack.push(vMat);
 	mMat = glm::translate(glm::mat4(1.0f), glm::vec3(cubeLocX, cubeLocY, cubeLocZ));
+	mMat *= glm::rotate(mMat, (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f));
+	mMat *= glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
 	mvMat = vMat * mMat;
+
+	
+
+	invTrMat = glm::transpose(glm::inverse(mvMat));
+
+	currentLightPos = glm::vec3(initialLightLoc.x, initialLightLoc.y, initialLightLoc.z);
+	installLights(vMat);
+	
 
 	//ピラミッドは親オブジェクト
 	mvStack.push(mvStack.top());
-	mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(pyramidLoc_X, pyramidLoc_Y, pyramidLoc_Z));
+	mvStack.top() *= glm::translate(glm::mat4(1.0f), glm::vec3(0, -1, 2));
 	mvStack.push(mvStack.top());
-	mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f));
+	mvStack.top() *= glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0f, 0.0f, 0.0f));
 	mvStack.push(mvStack.top());
-	mvStack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+	mvStack.top() *= glm::scale(glm::mat4(1.0f), glm::vec3(3.0f));
 
 
-	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvStack.top()));
+	glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+	glUniformMatrix4fv(nLoc, 1, GL_FALSE, glm::value_ptr(invTrMat));
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -194,7 +324,8 @@ void display(GLFWwindow* window, double currentTime)
 	glDepthFunc(GL_LEQUAL);
 	//glFrontFace(GL_CW);
 	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[3]);
-	//glDrawElements(GL_TRIANGLES,myTorus.getNumIndices(),GL_UNSIGNED_INT,0);//ピラミッドを描画
+	//glDrawElements(GL_TRIANGLES, Akyo.getIndices().size(), GL_UNSIGNED_INT, 0);//ピラミッドを描画
+	
 	glDrawArrays(GL_TRIANGLES, 0, Akyo.getNumVertices());
 	mvStack.pop();//太陽の軸回転をスタックから取り除く
 
@@ -235,8 +366,11 @@ int main(int argc, char** argv)
 
 	while (!glfwWindowShouldClose(window))
 	{
-		display(window, glfwGetTime());
-		glfwSwapBuffers(window);
+		if (width > 0 && height > 0) 
+		{
+			display(window, glfwGetTime());
+			glfwSwapBuffers(window);
+		}
 		glfwPollEvents();
 	}
 

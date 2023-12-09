@@ -10,12 +10,18 @@ private:
 	std::vector<glm::vec2> texCoords;
 	std::vector<glm::vec3> normalVec;
 
+	std::vector<int> indices;
+
+	bool IsSucess = true;
+
 public:
 	ImportedModel(const char* filePath);
 	int getNumVertices()const;
+	bool Is_Success()const { return IsSucess; }
 	std::vector<glm::vec3> getVertices()const;
 	std::vector<glm::vec2> getTextureCoords()const;
 	std::vector<glm::vec3> getNormals()const;
+	std::vector<int> getIndices()const;
 
 };
 
@@ -34,13 +40,20 @@ private:
 	std::vector<float> textureCoords;
 	std::vector<float> normals;
 
+	std::vector<int> indeices;
+
 public:
 	ModelImporter();
-	void parseOBJ(const char* filePath);
+	bool parseOBJ(const char* filePath);
 	int getNumVertices()const;
+
+	std::vector<float> getVerVal()const;
+	std::vector<float> getTextureCoordVal()const;
+	std::vector<float> getNormVal()const;
 
 	std::vector<float> getVertices()const;
 	std::vector<float> getTextureCoordinates()const;
 	std::vector<float> getNormals()const;
+	std::vector<int> getIndices()const;
 
 };
