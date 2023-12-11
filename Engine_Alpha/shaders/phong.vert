@@ -29,7 +29,8 @@ struct Material
 uniform vec4 globalAmbient;
 uniform PositionalLight light;
 uniform Material material;
-uniform mat4 mv_matrix;
+uniform mat4 model_matrix;
+uniform mat4 view_matrix;
 uniform mat4 proj_matrix;
 uniform mat4 norm_matrix; // for transforming normals
 
@@ -41,6 +42,8 @@ layout (binding = 0) uniform sampler2D samp;
 
 void main(void)
 { 
+
+	mat4 mv_matrix = view_matrix * model_matrix;
 	
 	varyingVertPos = (mv_matrix * vec4(vertNormal,1.0)).xyz;
 	varyingLightDir = light.position - varyingVertPos;

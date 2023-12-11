@@ -38,7 +38,7 @@ void Shape::Active(const int& vert_location, const int& tex_location, const int&
 {
 	if (mVertex != nullptr)
 	{
-		if (mVertex->GetState() != Vertex::enError)
+		if (mVertex->GetState(Vertex::enVertex) != Vertex::enError)
 		{
 			mVertex->Active(vert_location, tex_location, norm_location);
 		}
@@ -63,9 +63,9 @@ void Shape::SetTexture(const char* filePath)
 	}
 }
 
-Vertex::VertexState Shape::GetVertexState() const
+GLuint Shape::GetVertexState(const GLuint type) const
 {
-	return mVertex->GetState();
+	return mVertex->GetState(type);
 }
 
 unsigned int Shape::GetIndexCount() const

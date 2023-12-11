@@ -18,7 +18,7 @@ public:
 
 	class Texture* GetTexture()const { return mTexture; }
 
-	Vertex::VertexState GetVertexState()const;
+	GLuint GetVertexState(const GLuint type)const;
 	
 	unsigned int GetIndexCount()const;
 	unsigned int GetVertCount()const;

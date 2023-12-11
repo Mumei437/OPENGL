@@ -13,6 +13,16 @@
 #include"Cube.h"
 #include"Sphere.h"
 #include"Torus.h"
+#include"Model.h"
+#include"math.h"
+//白い照明
+
+//マテリアルプロパティ
+Vector4 matAmb = Light::goldAmbient();
+Vector4 matDif = Light::goldDiffuse();
+Vector4 matSpe = Light::goldSpecular();
+float matShi = Light::goldShininess();
+
 Renderer::Renderer(const int width, const int height, const char* title)
 	:
 	mInterVal(1),//インターバルは1
@@ -40,6 +50,8 @@ Renderer::Renderer(const int width, const int height, const char* title)
 	SetClearColor(Vec3::Zero);//背景色の設定(最初は真っ黒)
 
 	mShader = new Shader("shaders/Texture.vert", "shaders/Texture.frag");
+
+	mPhongShader = new Shader("shaders/phong.vert", "shaders/phong.frag");
 
 	//キューブの頂点
 	float vertexPositions[108] = {
@@ -99,21 +111,6 @@ Renderer::Renderer(const int width, const int height, const char* title)
 void Renderer::Load()
 {
 
-	Pyramid* pyramid = new Pyramid(this);
-	pyramid->Init();
-	pyramid->GetTransform()->SetPosition(Vector3(2, 0, 0));
-	pyramid->GetTransform()->SetScale(Vector3(1));
-	pyramid->GetTransform()->SetRotation(0, 20, 0);
-
-	pyramid->GetTexture()->SetTexture("Textures/itimatsu.png");
-	
-	Cube* cube = new Cube(this);
-	cube->Init();
-	cube->GetTransform()->SetPosition(Vector3(-2.5, 0, 0));
-	cube->GetTransform()->SetScale(Vector3(1));
-	cube->GetTransform()->SetRotation(0, 20, 0);
-	cube->GetTexture()->SetTexture("Textures/Mandril.jpg");
-
 	Sphere* sphere = new Sphere(this);
 	sphere->Init();
 	sphere->GetTransform()->SetPosition(0, 0, 0);
@@ -123,6 +120,12 @@ void Renderer::Load()
 	torus->Init();
 	torus->GetTransform()->SetPosition(0, -2, 0);
 	torus->GetTexture()->SetTexture("Textures/itimatsu.png");
+
+	Model* akyo = new Model(this, "models/Akyo.obj");
+	akyo->Init();
+	akyo->GetTransform()->SetPosition(0, 2, 0);
+	akyo->GetTexture()->SetTexture("Textures/tex_akyo.png");
+
 
 }
 
@@ -181,7 +184,7 @@ void Renderer::draw()
 	//float currentTime = (float)glfwGetTime();
 
 	glEnable(GL_CULL_FACE);
-	mShader->Use();
+	
 
 	int width = Window::GetWidth(), height = Window::GetHeight();
 
@@ -229,24 +232,78 @@ void Renderer::draw()
 	for (auto shape : mShapes)
 	{
 
-		shape->Active(0, 1, 2);
-		//mTexture->setActive();
-		shape->GetTexture()->setActive();
-		mShader->setMatrix4("view_matrix", vMat);
-		mShader->setMatrix4("model_matrix", shape->GetTransform()->GetMatrix());
-		mShader->setMatrix4("proj_matrix", pMat);
-
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 		//glFrontFace(GL_CCW);
 
-		if (shape->GetVertexState() == Vertex::enVertex)
+		if (shape->GetVertexState(Vertex::enVertex))
 		{
-			glDrawArrays(GL_TRIANGLES, 0, shape->GetVertCount());//ピラミッドを描画
+			if (shape->GetVertexState(Vertex::enNormal))
+			{
+				mPhongShader->Use();
+
+				Matrix4 mvMat = vMat * shape->GetTransform()->GetMatrix();
+				Matrix4 invtrMat = glm::transpose(glm::inverse(mvMat));
+
+				mPhongShader->setMatrix4("view_matrix", vMat);
+				mPhongShader->setMatrix4("model_matrix", shape->GetTransform()->GetMatrix());
+				mPhongShader->setMatrix4("proj_matrix", pMat);
+				mPhongShader->setMatrix4("norm_matrix", invtrMat);
+
+				const Vector4 globalAmbient(0.1f, 0.1f, 0.1f, 1.0f);
+				const Vector4 lightAmbient(0.0f, 0.0f, 0.0f, 1.0f);
+				const Vector4 lightDiffuse(1.0f, 1.0f, 1.0f, 1.0f);
+				const Vector4 lightSpecular(1.0f, 1.0f, 1.0f, 1.0f);
+
+				Vector3 lightPos(0.0f, 5.0f, 10.0f);
+
+				const Vector3 lightPosV = Vector3(vMat * Vector4(lightPos, 1.0));
+
+
+
+				mPhongShader->setVector4("globalAmbient", globalAmbient);
+				mPhongShader->setVector4("light.ambient", lightAmbient);
+				mPhongShader->setVector4("light.diffuse", lightDiffuse);
+				mPhongShader->setVector4("light.specular", lightSpecular);
+				mPhongShader->setVector3("light.position", lightPosV);
+				mPhongShader->setVector4("material.ambient", lightAmbient);
+				mPhongShader->setVector4("material.diffuse", lightDiffuse);
+				mPhongShader->setVector4("material.specular", lightSpecular);
+				mPhongShader->setVector3("material.shininess", lightPosV);
+
+				shape->Active(0, 1, 2);
+				shape->GetTexture()->setActive();
+
+				if (shape->GetVertexState(Vertex::enIndex))
+				{
+					glDrawElements(GL_TRIANGLES, shape->GetIndexCount(), GL_UNSIGNED_INT, 0);
+				}
+				else
+				{
+					glDrawArrays(GL_TRIANGLES, 0, shape->GetVertCount());//ピラミッドを描画
+				}
+			}
+			else
+			{
+				mShader->Use();
+				shape->Active(0, 1, 2);
+				shape->GetTexture()->setActive();
+				mShader->setMatrix4("view_matrix", vMat);
+				mShader->setMatrix4("model_matrix", shape->GetTransform()->GetMatrix());
+				mShader->setMatrix4("proj_matrix", pMat);
+				if (shape->GetVertexState(Vertex::enIndex))
+				{
+					glDrawElements(GL_TRIANGLES, shape->GetIndexCount(), GL_UNSIGNED_INT, 0);
+				}
+				else
+				{
+					glDrawArrays(GL_TRIANGLES, 0, shape->GetVertCount());//ピラミッドを描画
+				}
+			}
 		}
-		else if (shape->GetVertexState() == Vertex::enIndex)
+		else
 		{
-			glDrawElements(GL_TRIANGLES, shape->GetIndexCount(), GL_UNSIGNED_INT, 0);
+			printf("エラー：頂点情報がありません。\n");
 		}
 		
 	}

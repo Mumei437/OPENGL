@@ -132,7 +132,10 @@
   <ItemGroup>
     <ClCompile Include="Cube.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="math.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="ModelImporter.cpp" />
     <ClCompile Include="Pyramid.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Shader.cpp" />
@@ -149,6 +152,8 @@
     <None Include="packages.config" />
     <None Include="shaders\multi_cube.frag" />
     <None Include="shaders\multi_cube.vert" />
+    <None Include="shaders\phong.frag" />
+    <None Include="shaders\phong.vert" />
     <None Include="shaders\Texture.frag" />
     <None Include="shaders\Texture.vert" />
     <None Include="shaders\Transfer.frag" />
@@ -156,7 +161,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cube.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="math.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="ModelImporter.h" />
     <ClInclude Include="OpenGL.h" />
     <ClInclude Include="Pyramid.h" />
     <ClInclude Include="Renderer.h" />

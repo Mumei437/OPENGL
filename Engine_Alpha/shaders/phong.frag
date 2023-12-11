@@ -26,7 +26,8 @@ struct Material
 uniform vec4 globalAmbient;
 uniform PositionalLight light;
 uniform Material material;
-uniform mat4 mv_matrix;
+uniform mat4 model_matrix;
+uniform mat4 view_matrix;
 uniform mat4 proj_matrix;
 uniform mat4 norm_matrix;
 
@@ -34,6 +35,8 @@ layout (binding = 0) uniform sampler2D samp;
 
 void main(void)
 {
+
+	mat4 mv_matrix = view_matrix * model_matrix;
 	
 	vec3 L = normalize(varyingLightDir);
 	vec3 N = normalize(varyingNormal);

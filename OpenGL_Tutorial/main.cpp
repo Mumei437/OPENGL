@@ -39,14 +39,14 @@ float lightPos[3];//照明の座標
 
 glm::mat4 tMat, rMat;
 
-ImportedModel Akyo("3Dmodel/teapot.obj");
+ImportedModel Akyo("3Dmodel/stanford_dragon.obj");
 
 //Torus torus;
 
 glm::vec3 initialLightLoc = glm::vec3(0.0f, 5.0f, 10.0f);
 
 //白い照明
-float globalAmbient[4] = { 0.7f, 0.7f, 0.7f, 1.0f };
+float globalAmbient[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 float lightAmbient[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 float lightDiffuse[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 float lightSpecular[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -139,14 +139,13 @@ void init(GLFWwindow* window)
 	aspect = (float)width / (float)height;
 	pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f);
 
-	//brickTexture = Utils::loadTexture("Textures/tex_akyo.png");
+	brickTexture = Utils::loadTexture("Textures/dragon.jpg");
 
-	//glBindTexture(GL_TEXTURE_2D, brickTexture);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	//glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, brickTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	//異方性フィルタリングの追加(グラボが対応している場合)
-	/*
 	if (glewIsSupported("GL_EXT_texture_filter_anisotropic"))
 	{
 		printf("異方性フィルタリングの有効化\n");
@@ -154,7 +153,6 @@ void init(GLFWwindow* window)
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,&anisoSetting);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisoSetting);
 	}
-	*/
 
 
 	setupVertices();
@@ -281,7 +279,7 @@ void display(GLFWwindow* window, double currentTime)
 	mvStack.push(vMat);
 	mMat = glm::translate(glm::mat4(1.0f), glm::vec3(cubeLocX, cubeLocY, cubeLocZ));
 	mMat *= glm::rotate(mMat, (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f));
-	mMat *= glm::scale(glm::mat4(1.0f), glm::vec3(0.01f));
+	mMat *= glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 	mvMat = vMat * mMat;
 
 	

@@ -14,12 +14,16 @@ class Vertex
 public:
 	enum VertexState
 	{
-		enIndex,
-		enVertex,
-		enError,
+		enError = 0,
+		enNormal = 1,
+		enIndex  = 2,
+		enTexCoord = 4,
+		enVertex = 8,
 	};
 public:
 	Vertex(const float* vert, const GLuint Vertsize);
+
+	Vertex();
 
 	Vertex(const float* vert, const GLuint Vertsize, const int* index, const GLuint index_size);
 
@@ -52,7 +56,7 @@ public:
 	GLuint GetTexCount()const { return mTexCount; }
 	GLuint GetIndexCount()const { return mIndexCount; }
 
-	VertexState GetState()const { return mState; }
+	bool GetState(GLuint type)const { return ((mState) & (type)) == type; }
 
 private:
 	struct VertexBuffer
@@ -81,7 +85,7 @@ private:
 	GLuint mNormCount;
 	GLuint mIndexCount;
 
-	VertexState mState = enVertex;
+	GLuint mState = enError;
 
 };
 

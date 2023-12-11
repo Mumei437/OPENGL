@@ -26,6 +26,10 @@ Vertex::Vertex(const float* vert, const GLuint Vertsize)
 
 }
 
+Vertex::Vertex()
+{
+}
+
 Vertex::Vertex(const float* vert, const GLuint Vertsize, const int* index, const GLuint index_size)
 	:
 	mBufferNum(0),
@@ -271,6 +275,7 @@ void Vertex::SetVertex(const float* vert, const int size)
 		glBufferData(GL_ARRAY_BUFFER, size, vert, GL_STATIC_DRAW);
 
 		mBuffers.isdefine[VERTEX] = true;
+		mState |= enVertex;
 	}
 	catch (const char* errorCode)
 	{
@@ -307,6 +312,7 @@ void Vertex::SetTexCoord(const float* texcoord, const int size)
 		glBufferData(GL_ARRAY_BUFFER, size, texcoord, GL_STATIC_DRAW);
 
 		mBuffers.isdefine[TEXCOORDS] = true;
+		mState |= enTexCoord;
 	}
 	catch (const char* errorCode)
 	{
@@ -344,6 +350,7 @@ void Vertex::SetNormals(const float* normals, const int size)
 		glBufferData(GL_ARRAY_BUFFER, size, normals, GL_STATIC_DRAW);
 
 		mBuffers.isdefine[NORMALS] = true;
+		mState |= enNormal;
 	}
 	catch (const char* errorCode)
 	{
@@ -362,5 +369,5 @@ void Vertex::SetIndex(const int* indexs, const int size)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mBuffers.buffers[INDEX]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indexs, GL_STATIC_DRAW);
 
-	mState = enIndex;
+	mState |= enIndex;
 }

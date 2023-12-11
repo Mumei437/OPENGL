@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{6cb0b4bc-b7be-413c-9900-ebe1b9b092c9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="3Dmodel">
+      <UniqueIdentifier>{a058182e-2a02-48c3-abcb-2d5da106fee2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

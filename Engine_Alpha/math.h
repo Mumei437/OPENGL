@@ -62,3 +62,21 @@ namespace Quat
 
 }
 
+namespace Light
+{
+	 Vector4 goldAmbient();
+	 Vector4 goldDiffuse();
+	 Vector4 goldSpecular();
+	 float goldShininess();
+
+	 Vector4 silverAmbient();
+	 Vector4 silverDiffuse();
+	 Vector4 silverSpecular();
+	 float silverShininess();
+
+	 Vector4 bronzeAmbient();
+	 Vector4 bronzeDiffuse();
+	 Vector4 bronzeSpecular();
+	 float bronzeShininess();
+}
+

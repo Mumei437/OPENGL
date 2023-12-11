@@ -41,6 +41,7 @@ private:
 	int mInterVal;
 
 	class Shader* mShader;
+	class Shader* mPhongShader;
 	class Vertex* cube;
 	class Vertex* pyramid;
 	class Texture* mTexture;
